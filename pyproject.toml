@@ -8,6 +8,7 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
+    "jsonc-parser>=1.1.5",
     "python-dotenv>=1.2.3",
     "tinyfish>=0.8.0",
 ]
