@@ -1,0 +1,163 @@
+{
+    "AI": [
+        "open source AI models",
+        "new AI tool or framework launch",
+        "AI model gaining adoption on GitHub",
+        "agentic AI systems and autonomous agents",
+        "multimodal AI models",
+        "AI coding assistants and copilots",
+        "AI safety and alignment research",
+        "AI regulation and government policy",
+        "prompt engineering techniques",
+        "AI benchmarks and leaderboards"
+    ],
+    "ML": [
+        "machine learning research papers",
+        "new ML frameworks or libraries",
+        "model fine-tuning techniques",
+        "reinforcement learning breakthroughs",
+        "MLOps and model deployment tools",
+        "dataset releases and data quality",
+        "model compression and quantization",
+        "edge AI and on-device ML"
+    ],
+    "LLM_releases": [
+        "new large language model release",
+        "LLM benchmark comparison",
+        "retrieval augmented generation RAG",
+        "context window and long context models",
+        "open weight LLM release",
+        "LLM inference speed and cost optimization",
+        "fine-tuning or distillation of LLMs",
+        "AI agents built on top of LLMs",
+        "new Claude model release",
+        "new GPT or OpenAI model release",
+        "new Gemini or Gemma model release",
+        "new Llama model release from Meta",
+        "new Qwen model from Alibaba",
+        "new Grok model from xAI",
+        "new DeepSeek or Mistral model",
+        "LLM benchmark leaderboard update"
+    ],
+    "AI_companies": [
+        "OpenAI acquisition, funding, or product launch",
+        "Anthropic Claude new model or feature",
+        "Google DeepMind announcement",
+        "Meta AI open source release",
+        "Microsoft AI product update",
+        "HuggingFace new model or platform feature",
+        "AI startup raises funding round",
+        "big tech company AI partnership",
+        "AI company leadership change"
+    ],
+    "AI_coding_agents": [
+        "Claude Code new feature or update",
+        "Cursor AI editor update",
+        "GitHub Copilot CLI or agent update",
+        "Windsurf AI editor",
+        "OpenAI Codex CLI",
+        "Gemini CLI terminal agent",
+        "Zed editor AI features",
+        "long horizon autonomous coding agent",
+        "AI agent that ships pull requests autonomously"
+    ],
+    "Agentic_browsers_and_computer_use": [
+        "Claude for Chrome browser agent",
+        "ChatGPT Atlas browser",
+        "Perplexity Comet browser agent",
+        "Claude Cowork or computer use agent",
+        "AI agent booking or filling forms online",
+        "agentic browser security or prompt injection risk"
+    ],
+    "agent_frameworks_and_protocols": [
+        "Model Context Protocol MCP releases or updates",
+        "LangChain or LangGraph releases or updates",
+        "agent orchestration framework updates"
+    ],
+    "vector_and_data_infrastructure": [
+        "vector database new release or benchmark",
+        "retrieval augmented generation RAG framework update",
+        "embedding model release",
+        "data pipeline tool for LLM training"
+    ],
+    "Vibe_coding_and_context_engineering": [
+        "vibe coding trend or statistics",
+        "context engineering for AI coding",
+        "agentic coding versus vibe coding",
+        "spec driven development with AI",
+        "AI generated code quality or trust problems",
+        "debugging AI generated code",
+        "prompt engineering best practices"
+    ],
+    "cloud_and_devops": [
+        "cloud provider new service launch",
+        "Kubernetes or container orchestration update",
+        "CI CD pipeline tools",
+        "infrastructure as code frameworks",
+        "serverless computing trends",
+        "cloud cost optimization strategies",
+        "observability and monitoring tools"
+    ],
+    "cybersecurity": [
+        "new security vulnerability or CVE disclosed",
+        "AI powered cybersecurity tools",
+        "data breach or major hack reported",
+        "zero trust security architecture",
+        "security vulnerability in AI coding tool or agent",
+        "malicious package in MCP server or AI extension",
+        "AI regulation or government policy update",
+        "prompt injection or AI agent security risk",
+        "data privacy issue with AI tool"
+    ],
+    "programming_languages": [
+        "new programming language release or update",
+        "language performance benchmark",
+        "framework version update with breaking changes",
+        "Python Rust or Go adoption trend",
+        "type safety and language tooling improvements"
+    ],
+    "engineering_job_market_stats": [
+        "forward deployed engineer hiring trend",
+        "traditional software engineer transitioning to AI engineer",
+        "shift from frontend or backend to full stack AI roles",
+        "hiring trends in tech industry",
+        "in demand skills for engineers due to AI",
+        "remote work and engineering job market trends",
+        "engineering salary trends and reports",
+        "companies creating new AI era engineering job titles",
+        "Stack Overflow Developer Survey results",
+        "statistics on developers using AI tools daily",
+        "developer trust in AI generated code survey",
+        "percentage of code written by AI report",
+        "software engineering job posting trends report",
+        "tech layoffs due to AI automation",
+        "salary trends for AI engineers report",
+        "GitHub Octoverse report on AI repositories",
+        "statistics or forecast on future of software engineering jobs",
+        "report from research firm on AI impact on developers",
+        "survey on how AI changes daily engineering work",
+        "prediction on which engineering skills become obsolete",
+        "study on productivity gains from AI coding tools"
+    ],
+    "open_source": [
+        "trending open source project on GitHub",
+        "open source project reaches major milestone",
+        "open source license or governance change",
+        "open source project acquired by a company",
+        "community driven open source AI model",
+        "new open source AI project going viral on GitHub",
+        "GitHub repository stars growth for AI project"
+    ],
+    "hardware_and_chips": [
+        "new AI chip or GPU announcement",
+        "chip company partnership with AI company",
+        "hardware breakthrough for AI training or inference",
+        "on device AI hardware for phones or laptops"
+    ],
+    "startups_and_funding": [
+        "AI startup funding round announcement",
+        "new startup launches AI product",
+        "acquisition of an AI or dev tool startup",
+        "AI startup valuation or unicorn status"
+    ]
+}
