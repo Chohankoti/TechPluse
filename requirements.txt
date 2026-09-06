@@ -1,3 +1,4 @@
 tinyfish
 python-dotenv
 jsonc-parser
+requests
