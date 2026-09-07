@@ -9,11 +9,12 @@ import requests
 logger = logging.getLogger(__name__)
 
 class PostManager:
-    def __init__(self, content_state_path: str, previous_post_ids_key: str, relevant_posts_key: str, latest_post_url: str) -> None:
+    def __init__(self, content_state_path: str, previous_post_ids_key: str, relevant_posts_key: str, latest_post_url: str, post_detail_url: str) -> None:
         self.content_state_path = content_state_path
         self.previous_post_ids_key = previous_post_ids_key
         self.relevant_posts_key = relevant_posts_key
         self.latest_post_url = latest_post_url
+        self.post_detail_url = post_detail_url
     
     def _load_content_state(self) -> dict[str, Any] | None:
         """Loads the content state dictionary from the specified path."""
@@ -129,7 +130,7 @@ class PostManager:
             return None
          
         try:
-            response = requests.get(self.latest_post_url, timeout=10)
+            response = requests.get(self.latest_post_url, timeout=5000)
             if response.status_code != 200:
                 logger.warning("Error fetching latest post ids: HTTP status %s", response.status_code)
                 return None
@@ -151,6 +152,27 @@ class PostManager:
 
         prev_ids_set = set(prev_ids)
         return [post_id for post_id in latest_ids if post_id not in prev_ids_set]
+
+    def get_post_detail(self, post_id: int) -> dict[str, Any] | None:
+        """Gets the details of a post."""
+        if not self.post_detail_url:
+            logger.warning("Post detail url was not assigned.")
+            return None
+        
+        url = self.post_detail_url.format(id=post_id)
+        try:
+            response = requests.get(url, timeout=5000)
+            if response.status_code != 200:
+                logger.warning("Error fetching post details: HTTP status %s", response.status_code)
+                return None
+            data = response.json()
+            if "url" in data and "title" in data:
+                return {"title": data["title"], "url": data["url"]}
+            else:
+                return None
+        except Exception as e:
+            logger.warning("Error fetching post details from %s: %s", url, e)
+            return None 
 
 
 

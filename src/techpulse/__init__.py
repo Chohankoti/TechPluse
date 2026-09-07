@@ -17,12 +17,14 @@ def get_url_content(url: str) -> str:
 
 
 def main() -> None:
-    hn_api = os.getenv("HN_TOP_STORIES_API")
+    hn_latest_posts_api = os.getenv("HN_TOP_STORIES_API")
+    hn_item_url = os.getenv("HN_ITEM_API")
     post_manager = PostManager(
         content_state_path="src/data/content_state.jsonc",
         previous_post_ids_key="previous_post_ids",
         relevant_posts_key="relevant_posts",
-        latest_post_url=hn_api
+        latest_post_url=hn_latest_posts_api,
+        post_detail_url=hn_item_url
     )
     
     print("=== Testing PostManager Methods ===")
@@ -53,6 +55,10 @@ def main() -> None:
     # 6. Update relevant posts with new ones in format of [{post_id: int, why: string}]
     post_manager.update_relevant_posts([{"post_id": 123, "why": "Test post"}])
     print(f"[6] Updated Relevant Posts: {post_manager.get_relevant_posts()}")
+
+    # 7. Get post details
+    post_detail = post_manager.get_post_detail(post_manager.get_relevant_posts()[0]["post_id"])
+    print(f"[7] Post Details: {post_detail}")
 
     
 
