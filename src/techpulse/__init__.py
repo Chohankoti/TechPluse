@@ -1,20 +1,9 @@
 import os
 from dotenv import load_dotenv
-from tinyfish import TinyFish
 from .post_manager import PostManager
+from .url_fetcher import URLFetcher
 
 load_dotenv()
-
-
-def get_url_content(url: str) -> str:
-    try: 
-        client = TinyFish()
-        fetched = client.fetch.get_contents(urls=[url], format="markdown")
-        return fetched.results[0].text
-    except Exception as e:  
-        print(e)
-        return ""
-
 
 def main() -> None:
     hn_latest_posts_api = os.getenv("HN_TOP_STORIES_API")
@@ -53,12 +42,23 @@ def main() -> None:
     print(f"[5] Computed New Post IDs count: {len(new_ids)} | Sample (top 5): {new_ids[:5]}")
 
     # 6. Update relevant posts with new ones in format of [{post_id: int, why: string}]
-    post_manager.update_relevant_posts([{"post_id": 123, "why": "Test post"}])
+    post_manager.update_relevant_posts([{"post_id": 49569896, "why": "Test post"}])
     print(f"[6] Updated Relevant Posts: {post_manager.get_relevant_posts()}")
 
     # 7. Get post details
     post_detail = post_manager.get_post_detail(post_manager.get_relevant_posts()[0]["post_id"])
     print(f"[7] Post Details: {post_detail}")
+
+    print("\n=== Testing URLFetcher Methods ===")
+    url_fetcher = URLFetcher()
+    test_url = post_detail.get("url") if post_detail and isinstance(post_detail, dict) else None
+    if test_url:
+        print(f"[8] Fetching URL content for: {test_url}")
+        content = url_fetcher.get_url_content(test_url)
+        if content:
+            print(f"[8] URL Content Snippet (first 200 chars):\n{content[:200]}...")
+        else:
+            print("[8] URL Content: None (Failed to fetch or empty)")
 
     
 
