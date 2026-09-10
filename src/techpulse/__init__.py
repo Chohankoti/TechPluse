@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from .post_manager import PostManager
+from .models import PostMetadata
 from .url_fetcher import URLFetcher
 
 load_dotenv()
@@ -41,8 +42,8 @@ def main() -> None:
     new_ids = post_manager.get_compute_post_ids(prev_ids, latest_ids)
     print(f"[5] Computed New Post IDs count: {len(new_ids)} | Sample (top 5): {new_ids[:5]}")
 
-    # 6. Update relevant posts with new ones in format of [{post_id: int, why: string}]
-    post_manager.update_relevant_posts([{"post_id": 49569896, "why": "Test post"}])
+    # 6. Update relevant posts with new ones in format of PostMetadata
+    post_manager.update_relevant_posts([PostMetadata(post_id=49569896, title="Test post", url="http://test.com", reason="Test post", relevance_score=0.8, read_first=True)])
     print(f"[6] Updated Relevant Posts: {post_manager.get_relevant_posts()}")
 
     # 7. Get post details

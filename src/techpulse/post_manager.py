@@ -5,8 +5,20 @@ import re
 from typing import Any
 from jsonc_parser.parser import JsoncParser
 import requests
+from dataclasses import dataclass, field, asdict
+from .models import PostMetadata
 
 logger = logging.getLogger(__name__)
+
+@dataclass
+class PostMetadata:
+    post_id: int
+    title: str
+    url: str
+    reason: str
+    relevance_score: float
+    read_first: bool
+
 
 class PostManager:
     def __init__(self, content_state_path: str, previous_post_ids_key: str, relevant_posts_key: str, latest_post_url: str, post_detail_url: str) -> None:
@@ -94,15 +106,20 @@ class PostManager:
             logger.warning("Previous post ids value is not a list: %r", val)
         return None
     
-    def get_relevant_posts(self) -> list[dict[str, Any]] | None:
-        """Gets the list of relevant posts."""
+    def get_relevant_posts(self) -> list[PostMetadata] | None:
+        """Gets the list of relevant posts mapped to PostMetadata objects."""
         if not self.relevant_posts_key:
             logger.warning("Relevant posts key was not assigned.")
             return None
         
         val = self._load_content_state_by_key(self.relevant_posts_key)
         if isinstance(val, list):
-            return val
+            try:
+                return [PostMetadata(**post) if isinstance(post, dict) else post for post in val]
+            except (TypeError, ValueError) as e:
+                logger.warning("Failed to parse relevant posts into dataclasses: %s", e)
+                return None
+                
         if val is not None:
             logger.warning("Relevant posts value is not a list: %r", val)
         return None
@@ -115,13 +132,14 @@ class PostManager:
 
         return self._save_content_state_by_key(self.previous_post_ids_key, new_post_ids)
     
-    def update_relevant_posts(self, relevant_posts: list[dict[str, Any]]) -> bool:
+    def update_relevant_posts(self, relevant_posts: list[PostMetadata]) -> bool:
         """Updates the list of relevant posts."""
         if not self.relevant_posts_key:
             logger.warning("Relevant posts key was not assigned.")
             return False
         
-        return self._save_content_state_by_key(self.relevant_posts_key, relevant_posts)
+        serializable_posts = [asdict(post) for post in relevant_posts]
+        return self._save_content_state_by_key(self.relevant_posts_key, serializable_posts)
     
     def get_latest_post_ids(self) -> list[int] | None:
         """Fetches and gets the latest post ids from HN."""
@@ -130,7 +148,7 @@ class PostManager:
             return None
          
         try:
-            response = requests.get(self.latest_post_url, timeout=5000)
+            response = requests.get(self.latest_post_url, timeout=10000)
             if response.status_code != 200:
                 logger.warning("Error fetching latest post ids: HTTP status %s", response.status_code)
                 return None
@@ -161,7 +179,7 @@ class PostManager:
         
         url = self.post_detail_url.format(id=post_id)
         try:
-            response = requests.get(url, timeout=5000)
+            response = requests.get(url, timeout=10000)
             if response.status_code != 200:
                 logger.warning("Error fetching post details: HTTP status %s", response.status_code)
                 return None
@@ -173,11 +191,3 @@ class PostManager:
         except Exception as e:
             logger.warning("Error fetching post details from %s: %s", url, e)
             return None 
-
-
-
-
-            
-        
-        
-        

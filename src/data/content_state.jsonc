@@ -11,7 +11,14 @@
   /*
    * Posts identified as relevant to the user's constraints.
    *
-   * Type: list[{post_id: int, why: string}]
+   * Type: list[{
+   *   post_id: int,
+   *   title: string,
+   *   url: string,
+   *   reason: string,
+   *   relevance_score: float,
+   *   read_first: boolean
+   * }]
    * Purpose: Collects relevant posts along with a short explanation
    *          of why each post is relevant.
    * Lifecycle: Used to generate the final user email, then reset to
