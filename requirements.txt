@@ -1,4 +1,9 @@
+# #Install CPU-only torch
+# pip install torch --index-url https://download.pytorch.org/whl/cpu
+
 tinyfish
 python-dotenv
 jsonc-parser
 requests
+sentence-transformers
+numpy
