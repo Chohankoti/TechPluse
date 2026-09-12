@@ -7,3 +7,4 @@ jsonc-parser
 requests
 sentence-transformers
 numpy
+streamlit

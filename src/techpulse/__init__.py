@@ -2,10 +2,6 @@ import os
 import time
 import logging
 from dotenv import load_dotenv
-from .post_manager import PostManager
-from .models import PostMetadata
-from .url_fetcher import URLFetcher
-from .relevance_checker import RelevanceChecker
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(name)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -13,6 +9,12 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 def main() -> None:
+    # 0. Imports
+    from .post_manager import PostManager
+    from .models import PostMetadata
+    from .url_fetcher import URLFetcher
+    from .relevance_checker import RelevanceChecker
+
     # 1. Environment Configurations & Thresholds
     content_state_path = os.getenv("CONTENT_STATE_PATH")
     hn_latest_posts_api = os.getenv("HN_TOP_STORIES_API")
@@ -26,7 +28,28 @@ def main() -> None:
     fallback_threshold = float(os.getenv("TITLE_FALLBACK_THRESHOLD"))
     url_fetch_delay = float(os.getenv("URL_FETCH_DELAY_SECONDS"))
 
-    # 2. Instantiate Pipeline Managers
+    # 2. Check Constraints File Before Loading Models
+    if not constraints_path or not os.path.exists(constraints_path):
+        logger.error("User constraints file path '%s' does not exist. Aborting run.", constraints_path)
+        return
+
+    try:
+        from jsonc_parser.parser import JsoncParser
+        constraints_data = JsoncParser().parse_file(constraints_path)
+        has_phrases = False
+        if isinstance(constraints_data, dict):
+            for category, phrase_list in constraints_data.items():
+                if isinstance(phrase_list, list) and len(phrase_list) > 0:
+                    has_phrases = True
+                    break
+        if not has_phrases:
+            logger.error("User constraints file at '%s' is empty or contains no categories/phrases. Aborting run before loading models.", constraints_path)
+            return
+    except Exception as e:
+        logger.error("Failed to parse user constraints file at '%s': %s. Aborting run.", constraints_path, e)
+        return
+
+    # 3. Instantiate Pipeline Managers
     post_manager = PostManager(
         content_state_path=content_state_path,
         previous_post_ids_key="previous_post_ids",
@@ -46,10 +69,7 @@ def main() -> None:
         fallback_threshold=fallback_threshold
     )
 
-    # 3. Retrieve Post State
-    if not relevance_checker.constraint_phrases:
-        logger.error("User constraints not found. Aborting run.")
-        return
+    # 4. Retrieve Post State
     
     prev_ids = post_manager.get_previous_post_ids()
     latest_ids = post_manager.get_latest_post_ids()[2:4]
