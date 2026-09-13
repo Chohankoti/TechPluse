@@ -7,22 +7,5 @@
    * Lifecycle: Replaced with the latest processed post IDs after the
    *            relevant-post summary and links are sent to the user.
    */
-  "previous_post_ids": [],
-  /*
-   * Posts identified as relevant to the user's constraints.
-   *
-   * Type: list[{
-   *   post_id: int,
-   *   title: string,
-   *   url: string,
-   *   reason: string,
-   *   relevance_score: float,
-   *   read_first: boolean
-   * }]
-   * Purpose: Collects relevant posts along with a short explanation
-   *          of why each post is relevant.
-   * Lifecycle: Used to generate the final user email, then reset to
-   *            an empty list after the email is sent.
-   */
-  "relevant_posts": []
+  "previous_post_ids": []
 }

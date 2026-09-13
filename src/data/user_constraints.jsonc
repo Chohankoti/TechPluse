@@ -1,20 +1,17 @@
 {
     "AI": [
-        "open source AI models",
         "new AI tool or framework launch",
-        "AI model gaining adoption on GitHub",
-        "agentic AI systems and autonomous agents",
         "multimodal AI models",
         "AI coding assistants and copilots",
         "AI safety and alignment research",
         "AI regulation and government policy",
-        "prompt engineering techniques",
-        "AI benchmarks and leaderboards"
+        "AI benchmarks and leaderboards",
+        "general autonomous AI systems"
     ],
     "ML": [
         "machine learning research papers",
         "new ML frameworks or libraries",
-        "model fine-tuning techniques",
+        "machine learning model fine-tuning",
         "reinforcement learning breakthroughs",
         "MLOps and model deployment tools",
         "dataset releases and data quality",
@@ -24,12 +21,11 @@
     "LLM_releases": [
         "new large language model release",
         "LLM benchmark comparison",
-        "retrieval augmented generation RAG",
         "context window and long context models",
         "open weight LLM release",
         "LLM inference speed and cost optimization",
         "fine-tuning or distillation of LLMs",
-        "AI agents built on top of LLMs",
+        "LLM based autonomous agents",
         "new Claude model release",
         "new GPT or OpenAI model release",
         "new Gemini or Gemma model release",
@@ -58,7 +54,7 @@
         "OpenAI Codex CLI",
         "Gemini CLI terminal agent",
         "Zed editor AI features",
-        "long horizon autonomous coding agent",
+        "autonomous coding agents and AI pair programmers",
         "AI agent that ships pull requests autonomously"
     ],
     "Agentic_browsers_and_computer_use": [
@@ -67,16 +63,16 @@
         "Perplexity Comet browser agent",
         "Claude Cowork or computer use agent",
         "AI agent booking or filling forms online",
-        "agentic browser security or prompt injection risk"
+        "agentic browser vulnerabilities and safety risks"
     ],
     "agent_frameworks_and_protocols": [
         "Model Context Protocol MCP releases or updates",
         "LangChain or LangGraph releases or updates",
-        "agent orchestration framework updates"
+        "agent orchestration and protocol frameworks"
     ],
     "vector_and_data_infrastructure": [
         "vector database new release or benchmark",
-        "retrieval augmented generation RAG framework update",
+        "retrieval augmented generation RAG architecture and frameworks",
         "embedding model release",
         "data pipeline tool for LLM training"
     ],
@@ -87,7 +83,7 @@
         "spec driven development with AI",
         "AI generated code quality or trust problems",
         "debugging AI generated code",
-        "prompt engineering best practices"
+        "prompt engineering techniques and best practices"
     ],
     "cloud_and_devops": [
         "cloud provider new service launch",
@@ -105,7 +101,6 @@
         "zero trust security architecture",
         "security vulnerability in AI coding tool or agent",
         "malicious package in MCP server or AI extension",
-        "AI regulation or government policy update",
         "prompt injection or AI agent security risk",
         "data privacy issue with AI tool"
     ],

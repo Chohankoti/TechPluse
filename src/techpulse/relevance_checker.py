@@ -80,14 +80,17 @@ class RelevanceChecker:
         is_relevant = max_score >= self.title_threshold
         return is_relevant, max_score, match_info
 
-    def check_content_relevance(self, text: str) -> tuple[bool, float, dict[str, Any] | None]:
+    def check_content_relevance(self, text: str, title: str = "") -> tuple[bool, float, dict[str, Any] | None]:
         """Evaluates chunked article body text against constraint vectors."""
         if not text or len(self.constraint_phrases) == 0:
             return False, 0.0, None
 
-        chunks = self._chunk_text(text)
+        chunks = self._chunk_text(text, chunk_size=130, overlap=30)
         if not chunks:
             return False, 0.0, None
+
+        if title:
+            chunks = [f"[Title: {title}] {chunk}" for chunk in chunks]
 
         chunk_embeddings = self.model.encode(chunks, convert_to_tensor=True, normalize_embeddings=True)
         cosine_matrix = util.cos_sim(chunk_embeddings, self.constraint_embeddings)
@@ -97,56 +100,82 @@ class RelevanceChecker:
         chunk_idx, constraint_idx = np.unravel_index(flat_idx, matrix_np.shape)
         max_score = float(matrix_np[chunk_idx, constraint_idx])
 
+        matching_chunks_mask = matrix_np.max(axis=1) >= 0.38
+        multi_match_count = int(np.sum(matching_chunks_mask))
+
+        final_score = max_score
+        if multi_match_count >= 2:
+            final_score = min(1.0, max_score + 0.03)
+
+        # Extract raw matched chunk without [Title: ...] prefix
+        matched_chunk_raw = chunks[chunk_idx]
+        if title and matched_chunk_raw.startswith(f"[Title: {title}] "):
+            matched_chunk_raw = matched_chunk_raw[len(f"[Title: {title}] "):]
+
         match_info = {
             "category": self.categories[constraint_idx],
             "constraint": self.constraint_phrases[constraint_idx],
-            "score": round(max_score, 4),
-            "matched_snippet": chunks[chunk_idx][:120] + "..." if len(chunks[chunk_idx]) > 120 else chunks[chunk_idx]
+            "score": round(final_score, 4),
+            "multi_match_count": multi_match_count,
+            "matched_snippet": matched_chunk_raw[:140] + "..." if len(matched_chunk_raw) > 140 else matched_chunk_raw
         }
 
-        is_relevant = max_score >= self.content_threshold
-        return is_relevant, max_score, match_info
+        is_relevant = final_score >= self.content_threshold
+        return is_relevant, final_score, match_info
 
-    def _chunk_text(self, text: str, chunk_size: int = 250, overlap: int = 50) -> list[str]:
-        """Splits markdown/text into sliding window paragraph chunks."""
-        paragraphs = [p.strip() for p in text.split("\n") if len(p.strip()) > 30]
-        if not paragraphs:
-            words = text.split()
-            if not words:
-                return []
-            chunks = []
-            for i in range(0, len(words), chunk_size - overlap):
-                chunks.append(" ".join(words[i:i + chunk_size]))
-            return chunks
+    def _chunk_text(self, text: str, chunk_size: int = 130, overlap: int = 30) -> list[str]:
+        """
+        Splits text/markdown into token-optimized sliding window chunks (120-140 words max).
+        Preserves Markdown headings, short bullet points, and handles empty spacing cleanly.
+        """
+        # Filter out empty spacing lines without dropping short headings
+        lines = [line.strip() for line in text.split("\n") if line.strip()]
+        if not lines:
+            return []
+
+        chunks = []
+        current_chunk_words: list[str] = []
         
-        merged_chunks = []
-        current_chunk = []
-        current_len = 0
+        for line in lines:
+            line_words = line.split()
+            
+            # If a single paragraph/line exceeds chunk size, split it with sliding window
+            if len(line_words) > chunk_size:
+                if current_chunk_words:
+                    chunks.append(" ".join(current_chunk_words))
+                    current_chunk_words = []
+                
+                step = max(1, chunk_size - overlap)
+                for i in range(0, len(line_words), step):
+                    sub_words = line_words[i:i + chunk_size]
+                    chunks.append(" ".join(sub_words))
+                continue
 
-        for p in paragraphs:
-            word_count = len(p.split())
-            if current_len + word_count <= chunk_size:
-                current_chunk.append(p)
-                current_len += word_count
-            else:
-                if current_chunk:
-                    merged_chunks.append("\n".join(current_chunk))
-                current_chunk = [p]
-                current_len = word_count
-        
-        if current_chunk:
-            merged_chunks.append("\n".join(current_chunk))
+            # Check if adding current line exceeds target chunk word count
+            if len(current_chunk_words) + len(line_words) > chunk_size:
+                if current_chunk_words:
+                    chunks.append(" ".join(current_chunk_words))
+                    # Retain last 'overlap' words for sliding window continuity
+                    current_chunk_words = current_chunk_words[-overlap:] if overlap < len(current_chunk_words) else current_chunk_words
+            
+            current_chunk_words.extend(line_words)
 
-        return merged_chunks
+        if current_chunk_words:
+            chunks.append(" ".join(current_chunk_words))
+
+        return chunks
 
     def generate_reason_description(self, match_info: dict[str, Any], is_from_content: bool = False) -> str:
         """Formats an explanatory 'why' string for content state persistence."""
         category = match_info.get("category", "General")
-        constraint = match_info.get("constraint", "") 
+        constraint = match_info.get("constraint", "")
         score = match_info.get("score", 0.0)
+        snippet = match_info.get("matched_snippet", "")
 
-        if is_from_content:
-            return f"Matched with content score: {score} '{category}': {constraint}"
+        if is_from_content and snippet:
+            return f"[{category}] {constraint}: \"{snippet}\""
+        elif is_from_content:
+            return f"[{category}] {constraint}"
         else:
-            return f"Matched with title score: {score} '{category}': {constraint}"
+            return f"[{category}] {constraint}"
         

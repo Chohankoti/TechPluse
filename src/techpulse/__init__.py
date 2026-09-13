@@ -9,77 +9,13 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 def main() -> None:
-    from .mail_manager import MailManager
-    from .models import PostMetadata
-    from_email, to_email = os.getenv("FROM_EMAIL"), os.getenv("TO_EMAIL")
-    app_password = os.getenv("APP_PASSWORD")
-    mail_manager = MailManager(
-        from_email=from_email,
-        to_email=to_email,
-        app_password=app_password
-    )
-
-    posts = [
-        PostMetadata(
-            post_id=4521,
-            title="OpenAI Introduces a New Generation of AI Models",
-            url="https://example.com/openai",
-            reason="Covers a major AI model release and its impact on software development.",
-            relevance_score=0.96,
-            read_first=True
-        ),
-        PostMetadata(
-            post_id=4517,
-            title="Building Production-Ready RAG Applications",
-            url="https://example.com/rag",
-            reason="Provides practical techniques for improving retrieval quality.",
-            relevance_score=0.91,
-            read_first=True
-        ),
-        PostMetadata(
-            post_id=4508,
-            title="Popular Open Source AI Frameworks in 2026",
-            url="https://example.com/frameworks",
-            reason="Summarizes notable open-source frameworks for building AI applications.",
-            relevance_score=0.84,
-            read_first=False
-        ),
-        PostMetadata(
-            post_id=4521,
-            title="OpenAI Introduces a New Generation of AI Models",
-            url="https://example.com/openai",
-            reason="Covers a major AI model release and its impact on software development.",
-            relevance_score=0.96,
-            read_first=True
-        ),
-        PostMetadata(
-            post_id=4517,
-            title="Building Production-Ready RAG Applications",
-            url="https://example.com/rag",
-            reason="Provides practical techniques for improving retrieval quality.",
-            relevance_score=0.91,
-            read_first=True
-        ),
-        PostMetadata(
-            post_id=4508,
-            title="Popular Open Source AI Frameworks in 2026",
-            url="https://example.com/frameworks",
-            reason="Summarizes notable open-source frameworks for building AI applications.",
-            relevance_score=0.84,
-            read_first=False
-        )
-    ]
-
-    mail_manager.sendRelevantPosts(posts)
-
-    mail_manager.sendPipelinefail("emergency message pipeline breaked")
-
-def executor() -> None:
     # 0. Imports
     from .post_manager import PostManager
     from .models import PostMetadata
     from .url_fetcher import URLFetcher
     from .relevance_checker import RelevanceChecker
+    from .mail_manager import MailManager
+   
 
     # 1. Environment Configurations & Thresholds
     content_state_path = os.getenv("CONTENT_STATE_PATH")
@@ -92,7 +28,11 @@ def executor() -> None:
     title_threshold = float(os.getenv("TITLE_RELEVANCE_THRESHOLD"))
     content_threshold = float(os.getenv("CONTENT_RELEVANCE_THRESHOLD"))
     fallback_threshold = float(os.getenv("TITLE_FALLBACK_THRESHOLD"))
+    read_first_threshold = float(os.getenv("READ_FIRST_THRESHOLD"))
     url_fetch_delay = float(os.getenv("URL_FETCH_DELAY_SECONDS"))
+
+    from_email, to_email = os.getenv("FROM_EMAIL"), os.getenv("TO_EMAIL")
+    app_password = os.getenv("APP_PASSWORD")
 
     # 2. Check Constraints File Before Loading Models
     if not constraints_path or not os.path.exists(constraints_path):
@@ -125,6 +65,12 @@ def executor() -> None:
     )
 
     url_fetcher = URLFetcher()
+
+    mail_manager = MailManager(
+        from_email=from_email,
+        to_email=to_email,
+        app_password=app_password
+    )
     
     logger.info("Loading RelevanceChecker with model '%s' and constraints from '%s'", model_name, constraints_path)
     relevance_checker = RelevanceChecker(
@@ -136,11 +82,11 @@ def executor() -> None:
     )
 
     # 4. Retrieve Post State
-    
     prev_ids = post_manager.get_previous_post_ids()
-    latest_ids = post_manager.get_latest_post_ids()[2:4]
+    latest_ids = post_manager.get_latest_post_ids()[100:150]
     
     if not latest_ids:
+        mail_manager.sendPipelinefail("Failed to fetch latest post IDs from Hacker News API. Aborting run.")
         logger.error("Failed to fetch latest post IDs from Hacker News API. Aborting run.")
         return
 
@@ -177,15 +123,29 @@ def executor() -> None:
 
         # Layer 2: Full Content Relevance Evaluation
         if url_content:
-            is_content_relevant, content_score, content_match = relevance_checker.check_content_relevance(url_content)
+            is_content_relevant, content_score, content_match = relevance_checker.check_content_relevance(url_content, title=title)
             
-            if is_content_relevant:
+            # Composite Score: If title was exceptionally strong, blend it to avoid dropping valid blogs
+            composite_score = round(max(content_score, title_score * 0.85), 4)
+            is_composite_relevant = is_content_relevant or (composite_score >= content_threshold)
+
+            if is_composite_relevant:
                 reason_desc = relevance_checker.generate_reason_description(content_match, is_from_content=True)
-                content_score = round(content_score, 4)
-                curr_relevant_posts.append(PostMetadata(post_id=post_id, title=title, url=url, reason=reason_desc, relevance_score=content_score, read_first=True))
-                logger.info("[%d/%d] ID %d: MATCHED full content (Score: %.4f | %s)", idx, len(compute_ids), post_id, content_score, reason_desc)
+                
+                # Priority sorting: Mark high relevance (>= read_first_threshold) or multi-match articles as read_first
+                read_first = composite_score >= read_first_threshold or content_match.get("multi_match_count", 0) >= 2
+                
+                curr_relevant_posts.append(PostMetadata(
+                    post_id=post_id,
+                    title=title,
+                    url=url,
+                    reason=reason_desc,
+                    relevance_score=composite_score,
+                    read_first=read_first
+                ))
+                logger.info("[%d/%d] ID %d: MATCHED (Score: %.4f | ReadFirst: %s | %s)", idx, len(compute_ids), post_id, composite_score, read_first, reason_desc)
             else:
-                logger.info("[%d/%d] ID %d: Content body failed Layer 2 filter (Score: %.4f). Discarding.", idx, len(compute_ids), post_id, content_score)
+                logger.info("[%d/%d] ID %d: Content body failed Layer 2 filter (Content: %.4f, Title: %.4f). Discarding.", idx, len(compute_ids), post_id, content_score, title_score)
         else:
             # Fallback to high title relevance if URL fetch failed/blocked
             if title_score >= fallback_threshold:
@@ -196,12 +156,24 @@ def executor() -> None:
             else:
                 logger.info("[%d/%d] ID %d: Content fetch failed and title score (%.4f) below fallback threshold.", idx, len(compute_ids), post_id, title_score)
 
-    # 5. Persist State Updates
-    logger.info("Found %d relevant posts. Updating content state...", len(curr_relevant_posts))
-    post_manager.update_relevant_posts(curr_relevant_posts)
-    post_manager.update_previous_post_ids(latest_ids)
-    logger.info("Pipeline execution completed successfully.")
+    
+    curr_relevant_posts.sort(key=lambda p: p.relevance_score, reverse=True)
 
+    if curr_relevant_posts:
+        top_count = max(1, int(len(curr_relevant_posts) * 0.30))
+        for i in range(len(curr_relevant_posts)):
+            if i < top_count:
+                curr_relevant_posts[i].read_first = True
+
+    # 5. Persist State Update
+    logger.info("Found %d relevant posts. Updating content state...", len(curr_relevant_posts))
+    post_manager.update_previous_post_ids(latest_ids)
+
+    # 6. Send Emails
+    mail_manager.sendRelevantPosts(curr_relevant_posts)
+
+    logger.info("Pipeline execution completed successfully.")
+    
 
 if __name__ == "__main__":
-    main()
+    main() 

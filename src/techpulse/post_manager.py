@@ -1,7 +1,6 @@
 from __future__ import annotations
 import json
 import logging
-import re
 from typing import Any
 from jsonc_parser.parser import JsoncParser
 import requests
@@ -9,16 +8,6 @@ from dataclasses import dataclass, field, asdict
 from .models import PostMetadata
 
 logger = logging.getLogger(__name__)
-
-@dataclass
-class PostMetadata:
-    post_id: int
-    title: str
-    url: str
-    reason: str
-    relevance_score: float
-    read_first: bool
-
 
 class PostManager:
     def __init__(self, content_state_path: str, previous_post_ids_key: str, relevant_posts_key: str, latest_post_url: str, post_detail_url: str) -> None:
@@ -61,7 +50,7 @@ class PostManager:
         return content_state[key]
     
     def _save_content_state_by_key(self, key: str, value: Any) -> bool:
-        """Saves value into content state for the given key while preserving file comments."""
+        """Saves value into content state for the given key."""
         if not self.content_state_path:
             logger.warning("Content state path was not assigned.")
             return False
@@ -70,21 +59,9 @@ class PostManager:
             return False
 
         try:
-            with open(self.content_state_path, "r", encoding="utf-8") as f:
-                raw_content = f.read()
-
-            esc_key = re.escape(key)
-            pattern = re.compile(
-                r'("' + esc_key + r'"\s*:\s*)(?:\[[\s\S]*?\]|\{[\s\S]*?\}|"[^"]*"|\d+|true|false|null)'
-            )
-            formatted_val = json.dumps(value, indent=2)
-
-            if pattern.search(raw_content):
-                updated_content = pattern.sub(r'\g<1>' + formatted_val, raw_content, count=1)
-            else:
-                content_state = self._load_content_state() or {}
-                content_state[key] = value
-                updated_content = json.dumps(content_state, indent=2)
+            content_state = self._load_content_state() or {}
+            content_state[key] = value
+            updated_content = json.dumps(content_state, indent=2)
 
             with open(self.content_state_path, "w", encoding="utf-8") as f:
                 f.write(updated_content)
@@ -131,15 +108,6 @@ class PostManager:
             return False
 
         return self._save_content_state_by_key(self.previous_post_ids_key, new_post_ids)
-    
-    def update_relevant_posts(self, relevant_posts: list[PostMetadata]) -> bool:
-        """Updates the list of relevant posts."""
-        if not self.relevant_posts_key:
-            logger.warning("Relevant posts key was not assigned.")
-            return False
-        
-        serializable_posts = [asdict(post) for post in relevant_posts]
-        return self._save_content_state_by_key(self.relevant_posts_key, serializable_posts)
     
     def get_latest_post_ids(self) -> list[int] | None:
         """Fetches and gets the latest post ids from HN."""

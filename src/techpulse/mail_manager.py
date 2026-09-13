@@ -3,7 +3,9 @@ from .models import PostMetadata
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from datetime import datetime
+import logging
 
+logger = logging.getLogger(__name__)
 
 class MailManager:
     SMTP_HOST = "smtp.gmail.com"
@@ -13,10 +15,16 @@ class MailManager:
         self.from_email = from_email
         self.to_email = to_email
         self.app_password = app_password
+        if not self.from_email or not self.to_email or not self.app_password:
+            logger.warning("MailManager initialized with incomplete email credentials.")
 
     def sendRelevantPosts(self, posts: list[PostMetadata]):
+        if not posts:
+            logger.info("No relevant posts to send.")
+            return
         now = datetime.now()
         current_time = now.strftime("%B %d, %Y") + " | " + now.strftime("%I:%M %p %Z")
+        user_name = self.to_email.split('@')[0].replace('_', ' ').replace('.', ' ').title()
 
         read_first_posts = sorted(
             (post for post in posts if post.read_first),
@@ -30,9 +38,17 @@ class MailManager:
             reverse=True
         )
 
+        logger.info(
+            "Preparing digest email with %d relevant posts (%d Read First, %d Read Later)...",
+            len(posts),
+            len(read_first_posts),
+            len(read_later_posts)
+        )
+
         html = self._buildRelevantPostsHtml(
             read_first_posts,
-            read_later_posts
+            read_later_posts,
+            user_name
         )
 
         self._sendMail(
@@ -41,6 +57,7 @@ class MailManager:
         )
 
     def sendPipelinefail(self, message: str):
+        logger.error("Preparing pipeline failure alert email: %s", message)
         now = datetime.now()
         current_time = now.strftime("%B %d, %Y") + " | " + now.strftime("%I:%M %p %Z")
 
@@ -64,20 +81,11 @@ class MailManager:
                 box-shadow: 0 4px 12px rgba(65, 51, 51, 0.05);
             ">
                 <h2 style="margin-top: 0; color: #F2765E; font-size: 22px; font-weight: 700;">
-                    TechPulse Pipeline Failed at {current_time}
+                    TechPulse Pipeline Failed
                 </h2>
 
                 <p style="line-height: 1.6; color: #413333; font-size: 15px;">
                     {message}
-                </p>
-
-                <p style="
-                    margin-top: 24px;
-                    font-size: 12px;
-                    color: #315B8C;
-                    font-weight: 600;
-                ">
-                    {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
                 </p>
             </div>
         </body>
@@ -85,11 +93,15 @@ class MailManager:
         """
 
         self._sendMail(
-            subject="TechPulse - Pipeline Failed",
+            subject=f"TechPulse - Pipeline Failed - {current_time}",
             html=html
         )
 
     def _sendMail(self, subject: str, html: str):
+        if not self.from_email or not self.to_email or not self.app_password:
+            logger.error("Cannot send email: missing configuration (from_email, to_email, or app_password).")
+            return
+
         mail = MIMEMultipart("alternative")
         mail["From"] = self.from_email
         mail["To"] = self.to_email
@@ -97,18 +109,24 @@ class MailManager:
 
         mail.attach(MIMEText(html, "html", "utf-8"))
 
-        with smtplib.SMTP_SSL(self.SMTP_HOST, self.SMTP_PORT) as server:
-            server.login(self.from_email, self.app_password)
-            server.sendmail(
-                self.from_email,
-                self.to_email,
-                mail.as_string()
-            )
+        try:
+            logger.info("Connecting to SMTP server %s:%d to send email...", self.SMTP_HOST, self.SMTP_PORT)
+            with smtplib.SMTP_SSL(self.SMTP_HOST, self.SMTP_PORT) as server:
+                server.login(self.from_email, self.app_password)
+                server.sendmail(
+                    self.from_email,
+                    self.to_email,
+                    mail.as_string()
+                )
+            logger.info("Successfully sent email to %s with subject: '%s'", self.to_email, subject)
+        except Exception as e:
+            logger.error("Failed to send email with subject '%s' to %s: %s", subject, self.to_email, e)
 
     def _buildRelevantPostsHtml(
         self,
         read_first_posts: list[PostMetadata],
-        read_later_posts: list[PostMetadata]
+        read_later_posts: list[PostMetadata],
+        user_name: str
     ) -> str:
         current_time = datetime.now()
         greeting_time = "Good morning" if 5 <= current_time.hour < 12 else "Good afternoon" if 12 <= current_time.hour < 17 else "Good evening"
@@ -335,7 +353,7 @@ class MailManager:
 
     <div class="header">
         <p class="brand">Tech<span>Pulse</span></p>
-        <p class="greeting">{greeting_time}, Reader</p>
+        <p class="greeting">{greeting_time}, {user_name}</p>
     </div>
 
     <div class="intro">
