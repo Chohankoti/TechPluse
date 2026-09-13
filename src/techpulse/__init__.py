@@ -9,6 +9,72 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 def main() -> None:
+    from .mail_manager import MailManager
+    from .models import PostMetadata
+    from_email, to_email = os.getenv("FROM_EMAIL"), os.getenv("TO_EMAIL")
+    app_password = os.getenv("APP_PASSWORD")
+    mail_manager = MailManager(
+        from_email=from_email,
+        to_email=to_email,
+        app_password=app_password
+    )
+
+    posts = [
+        PostMetadata(
+            post_id=4521,
+            title="OpenAI Introduces a New Generation of AI Models",
+            url="https://example.com/openai",
+            reason="Covers a major AI model release and its impact on software development.",
+            relevance_score=0.96,
+            read_first=True
+        ),
+        PostMetadata(
+            post_id=4517,
+            title="Building Production-Ready RAG Applications",
+            url="https://example.com/rag",
+            reason="Provides practical techniques for improving retrieval quality.",
+            relevance_score=0.91,
+            read_first=True
+        ),
+        PostMetadata(
+            post_id=4508,
+            title="Popular Open Source AI Frameworks in 2026",
+            url="https://example.com/frameworks",
+            reason="Summarizes notable open-source frameworks for building AI applications.",
+            relevance_score=0.84,
+            read_first=False
+        ),
+        PostMetadata(
+            post_id=4521,
+            title="OpenAI Introduces a New Generation of AI Models",
+            url="https://example.com/openai",
+            reason="Covers a major AI model release and its impact on software development.",
+            relevance_score=0.96,
+            read_first=True
+        ),
+        PostMetadata(
+            post_id=4517,
+            title="Building Production-Ready RAG Applications",
+            url="https://example.com/rag",
+            reason="Provides practical techniques for improving retrieval quality.",
+            relevance_score=0.91,
+            read_first=True
+        ),
+        PostMetadata(
+            post_id=4508,
+            title="Popular Open Source AI Frameworks in 2026",
+            url="https://example.com/frameworks",
+            reason="Summarizes notable open-source frameworks for building AI applications.",
+            relevance_score=0.84,
+            read_first=False
+        )
+    ]
+
+    mail_manager.sendRelevantPosts(posts)
+
+    mail_manager.sendPipelinefail("emergency message pipeline breaked")
+
+def executor() -> None:
     # 0. Imports
     from .post_manager import PostManager
     from .models import PostMetadata
@@ -136,7 +202,6 @@ def main() -> None:
     post_manager.update_previous_post_ids(latest_ids)
     logger.info("Pipeline execution completed successfully.")
 
-    
 
 if __name__ == "__main__":
     main()
