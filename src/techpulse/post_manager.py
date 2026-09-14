@@ -4,19 +4,55 @@ import logging
 from typing import Any
 from jsonc_parser.parser import JsoncParser
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util import Retry
 from dataclasses import dataclass, field, asdict
 from .models import PostMetadata
 
 logger = logging.getLogger(__name__)
 
 class PostManager:
-    def __init__(self, content_state_path: str, previous_post_ids_key: str, relevant_posts_key: str, latest_post_url: str, post_detail_url: str) -> None:
+    def __init__(
+        self,
+        content_state_path: str,
+        previous_post_ids_key: str,
+        relevant_posts_key: str,
+        latest_post_url: str,
+        post_detail_url: str,
+        session: requests.Session | None = None
+    ) -> None:
         self.content_state_path = content_state_path
         self.previous_post_ids_key = previous_post_ids_key
         self.relevant_posts_key = relevant_posts_key
         self.latest_post_url = latest_post_url
         self.post_detail_url = post_detail_url
-    
+        self._owned_session = session is None
+        
+        if session is not None:
+            self.session = session
+        else:
+            self.session = requests.Session()
+            retry_strategy = Retry(
+                total=3,
+                backoff_factor=0.5,
+                status_forcelist=[429, 500, 502, 503, 504],
+                allowed_methods=["GET"]
+            )
+            adapter = HTTPAdapter(pool_connections=10, pool_maxsize=20, max_retries=retry_strategy)
+            self.session.mount("https://", adapter)
+            self.session.mount("http://", adapter)
+
+    def close(self) -> None:
+        """Closes the underlying HTTP session if owned by this instance."""
+        if getattr(self, "_owned_session", False) and getattr(self, "session", None):
+            self.session.close()
+
+    def __enter__(self) -> PostManager:
+        return self
+
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        self.close()
+
     def _load_content_state(self) -> dict[str, Any] | None:
         """Loads the content state dictionary from the specified path."""
         if not self.content_state_path:
@@ -116,7 +152,7 @@ class PostManager:
             return None
          
         try:
-            response = requests.get(self.latest_post_url, timeout=10000)
+            response = self.session.get(self.latest_post_url, timeout=(5.0, 15.0))
             if response.status_code != 200:
                 logger.warning("Error fetching latest post ids: HTTP status %s", response.status_code)
                 return None
@@ -147,12 +183,12 @@ class PostManager:
         
         url = self.post_detail_url.format(id=post_id)
         try:
-            response = requests.get(url, timeout=10000)
+            response = self.session.get(url, timeout=(5.0, 15.0))
             if response.status_code != 200:
                 logger.warning("Error fetching post details: HTTP status %s", response.status_code)
                 return None
             data = response.json()
-            if "url" in data and "title" in data:
+            if isinstance(data, dict) and "url" in data and "title" in data:
                 return {"title": data["title"], "url": data["url"]}
             else:
                 return None
