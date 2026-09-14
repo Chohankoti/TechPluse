@@ -1,14 +1,53 @@
 import os
 import time
 import logging
+from logging.handlers import RotatingFileHandler
 from dotenv import load_dotenv
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(name)s - %(message)s")
+def setup_logging(
+    log_dir: str | None = None,
+    log_file: str = "techpulse.log",
+    max_bytes: int = 5 * 1024 * 1024,
+    backup_count: int = 5
+) -> None:
+    if log_dir is None:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        log_dir = os.path.abspath(os.path.join(current_dir, "..", "logs"))
+
+    os.makedirs(log_dir, exist_ok=True)
+    file_path = os.path.join(log_dir, log_file)
+
+    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s")
+
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.INFO)
+
+    if root_logger.hasHandlers():
+        root_logger.handlers.clear()
+
+    # 1. Rotating File Handler
+    file_handler = RotatingFileHandler(
+        file_path,
+        maxBytes=max_bytes,
+        backupCount=backup_count,
+        encoding="utf-8"
+    )
+    file_handler.setFormatter(formatter)
+    root_logger.addHandler(file_handler)
+
+    # 2. Console Handler (stdout)
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+    root_logger.addHandler(console_handler)
+
 logger = logging.getLogger(__name__)
 
 load_dotenv()
 
 def main() -> None:
+    # Initialize logging with rotating file handler in src/logs
+    setup_logging()
+
     # 0. Imports
     from .post_manager import PostManager
     from .models import PostMetadata
