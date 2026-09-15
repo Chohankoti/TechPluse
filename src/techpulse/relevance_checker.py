@@ -100,7 +100,7 @@ class RelevanceChecker:
         chunk_idx, constraint_idx = np.unravel_index(flat_idx, matrix_np.shape)
         max_score = float(matrix_np[chunk_idx, constraint_idx])
 
-        matching_chunks_mask = matrix_np.max(axis=1) >= 0.38
+        matching_chunks_mask = matrix_np.max(axis=1) >= 0.50
         multi_match_count = int(np.sum(matching_chunks_mask))
 
         final_score = max_score

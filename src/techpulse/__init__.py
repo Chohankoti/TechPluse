@@ -8,7 +8,7 @@ def setup_logging(
     log_dir: str | None = None,
     log_file: str = "techpulse.log",
     max_bytes: int = 5 * 1024 * 1024,
-    backup_count: int = 5
+    backup_count: int = 2
 ) -> None:
     if log_dir is None:
         current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -171,8 +171,8 @@ def main() -> None:
                 if is_composite_relevant:
                     reason_desc = relevance_checker.generate_reason_description(content_match, is_from_content=True)
                     
-                    # Priority sorting: Mark high relevance (>= read_first_threshold) or multi-match articles as read_first
-                    read_first = composite_score >= read_first_threshold or content_match.get("multi_match_count", 0) >= 2
+                    # Priority sorting: Mark high relevance (>= read_first_threshold) and multi-match articles as read_first
+                    read_first = composite_score >= read_first_threshold and content_match.get("multi_match_count", 0) >= 2
                     
                     curr_relevant_posts.append(PostMetadata(
                         post_id=post_id,
@@ -194,15 +194,7 @@ def main() -> None:
                     logger.info("[%d/%d] ID %d: MATCHED title fallback (Fetch failed, Title Score: %.4f | %s)", idx, len(compute_ids), post_id, title_score, reason_desc)
                 else:
                     logger.info("[%d/%d] ID %d: Content fetch failed and title score (%.4f) below fallback threshold.", idx, len(compute_ids), post_id, title_score)
-
-        curr_relevant_posts.sort(key=lambda p: p.relevance_score, reverse=True)
-
-        if curr_relevant_posts:
-            top_count = max(1, int(len(curr_relevant_posts) * 0.30))
-            for i in range(len(curr_relevant_posts)):
-                if i < top_count:
-                    curr_relevant_posts[i].read_first = True
-
+        
         # 5. Persist State Update
         logger.info("Found %d relevant posts. Updating content state...", len(curr_relevant_posts))
         post_manager.update_previous_post_ids(latest_ids)
