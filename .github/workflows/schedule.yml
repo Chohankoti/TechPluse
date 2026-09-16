@@ -1,0 +1,68 @@
+name: TechPulse Scheduled Pipeline Execution
+
+on:
+  schedule:
+    # 8:30 PM IST (UTC+5:30) = 15:00 UTC (3:00 PM UTC)
+    - cron: '0 15 * * *'
+  workflow_dispatch:
+
+jobs:
+  run-techpulse:
+    runs-on: ubuntu-latest
+
+    env:
+      # Secrets from GitHub Repository Secrets
+      FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
+      TO_EMAIL: ${{ secrets.TO_EMAIL }}
+      APP_PASSWORD: ${{ secrets.APP_PASSWORD }}
+      TINYFISH_API_KEY: ${{ secrets.TINYFISH_API_KEY }}
+
+      # Hardcoded Post State & URLs
+      CONTENT_STATE_PATH: "src/data/content_state.jsonc"
+      HN_TOP_STORIES_API: "https://hacker-news.firebaseio.com/v0/topstories.json"
+      HN_NEW_STORIES_API: "https://hacker-news.firebaseio.com/v0/newstories.json"
+      HN_ITEM_API: "https://hacker-news.firebaseio.com/v0/item/{id}.json"
+
+      # Hardcoded Engine & Threshold Configurations
+      SENTENCE_TRANSFORMER_MODEL: "all-MiniLM-L6-v2"
+      USER_CONSTRAINTS_PATH: "src/data/user_constraints.jsonc"
+      TITLE_RELEVANCE_THRESHOLD: "0.50"
+      CONTENT_RELEVANCE_THRESHOLD: "0.60"
+      TITLE_FALLBACK_THRESHOLD: "0.55"
+      READ_FIRST_THRESHOLD: "0.65"
+      URL_FETCH_DELAY_SECONDS: "1"
+
+    steps:
+      - name: 1. Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 2. Set up Python Environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: 3. Verify GitHub Runner & Environment Info
+        run: |
+          echo "=== GitHub Runner Details ==="
+          echo "Runner OS: $RUNNER_OS"
+          echo "Runner Architecture: $RUNNER_ARCH"
+          echo "Runner Name: ${RUNNER_NAME:-GitHub Hosted Runner}"
+          echo "Current UTC Time: $(date -u)"
+          echo "Python version: $(python --version)"
+
+      - name: 4. Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -r requirements.txt
+
+      - name: 5. Execute TechPulse Pipeline
+        run: |
+          PYTHONPATH=src python -m techpulse
+
+      - name: 6. Persist Content State (Git Auto-Commit)
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(state): auto-update content_state.jsonc from scheduled pipeline"
+          file_pattern: "src/data/content_state.jsonc"
