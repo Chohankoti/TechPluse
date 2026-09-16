@@ -2,9 +2,12 @@ name: TechPulse Scheduled Pipeline Execution
 
 on:
   schedule:
-    # 8:30 PM IST (UTC+5:30) = 15:00 UTC (3:00 PM UTC)
-    - cron: '0 15 * * *'
+    # 9:15 PM IST (UTC+5:30) = 15:45 UTC
+    - cron: '45 15 * * *'
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   run-techpulse:
