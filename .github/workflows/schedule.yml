@@ -26,13 +26,13 @@ jobs:
       HN_NEW_STORIES_API: "https://hacker-news.firebaseio.com/v0/newstories.json"
       HN_ITEM_API: "https://hacker-news.firebaseio.com/v0/item/{id}.json"
 
-      # Hardcoded Engine & Threshold Configurations
+      # Dynamic Engine & Threshold Configurations (Secret Override with Default Fallbacks)
       SENTENCE_TRANSFORMER_MODEL: "all-MiniLM-L6-v2"
       USER_CONSTRAINTS_PATH: "src/data/user_constraints.jsonc"
-      TITLE_RELEVANCE_THRESHOLD: "0.50"
-      CONTENT_RELEVANCE_THRESHOLD: "0.60"
-      TITLE_FALLBACK_THRESHOLD: "0.55"
-      READ_FIRST_THRESHOLD: "0.65"
+      TITLE_RELEVANCE_THRESHOLD: ${{ secrets.TITLE_RELEVANCE_THRESHOLD || '0.50' }}
+      CONTENT_RELEVANCE_THRESHOLD: ${{ secrets.CONTENT_RELEVANCE_THRESHOLD || '0.60' }}
+      TITLE_FALLBACK_THRESHOLD: ${{ secrets.TITLE_FALLBACK_THRESHOLD || '0.55' }}
+      READ_FIRST_THRESHOLD: ${{ secrets.READ_FIRST_THRESHOLD || '0.65' }}
       URL_FETCH_DELAY_SECONDS: "1"
 
     steps:
