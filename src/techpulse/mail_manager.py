@@ -22,8 +22,6 @@ class MailManager:
         if not posts:
             logger.info("No relevant posts to send.")
             return
-        now = datetime.now()
-        current_time = now.strftime("%B %d, %Y") + " | " + now.strftime("%I:%M %p %Z")
         user_name = self.to_email.split('@')[0].replace('_', ' ').replace('.', ' ').title()
 
         read_first_posts = sorted(
@@ -52,7 +50,7 @@ class MailManager:
         )
 
         self._sendMail(
-            subject=f"TechPulse - {current_time}",
+            subject=f"TechPulse - {len(posts)} articles for today",
             html=html
         )
 
@@ -227,8 +225,14 @@ class MailManager:
             margin-right: 6px;
         }}
 
-        .article {{
+        .article-card {{
+            display: block;
+            text-decoration: none;
+            color: inherit;
             margin-bottom: 16px;
+        }}
+
+        .article {{
             padding: 20px;
             background-color: #ffffff;
             border: 1px solid #e5dec9;
@@ -241,16 +245,7 @@ class MailManager:
             font-size: 17px;
             line-height: 1.45;
             font-weight: 600;
-        }}
-
-        .article-title a {{
             color: #315B8C;
-            text-decoration: none;
-        }}
-
-        .article-title a:hover {{
-            color: #F2765E;
-            text-decoration: underline;
         }}
 
         .reason-label {{
@@ -429,21 +424,21 @@ class MailManager:
 
         for post in posts:
             articles += f"""
-            <div class="article">
-                <h3 class="article-title">
-                    <a href="{post.url}" target="_blank">
+            <a href="{post.url}" target="_blank" class="article-card">
+                <div class="article">
+                    <h3 class="article-title">
                         {post.title}
-                    </a>
-                </h3>
+                    </h3>
 
-                <p class="reason-label">
-                    Reason to read
-                </p>
+                    <p class="reason-label">
+                        Reason to read
+                    </p>
 
-                <p class="reason">
-                    {post.reason}
-                </p>
-            </div>
+                    <p class="reason">
+                        {post.reason}
+                    </p>
+                </div>
+            </a>
             """
 
         return f"""
