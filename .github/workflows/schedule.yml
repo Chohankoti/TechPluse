@@ -39,11 +39,12 @@ jobs:
       - name: 1. Checkout Repository
         uses: actions/checkout@v4
 
-      - name: 2. Set up Python Environment
-        uses: actions/setup-python@v5
+      - name: 2. Set up Python & uv Environment
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: "3.11"
-          cache: "pip"
+          python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
       - name: 3. Verify GitHub Runner & Environment Info
         run: |
@@ -52,17 +53,15 @@ jobs:
           echo "Runner Architecture: $RUNNER_ARCH"
           echo "Runner Name: ${RUNNER_NAME:-GitHub Hosted Runner}"
           echo "Current UTC Time: $(date -u)"
-          echo "Python version: $(python --version)"
+          uv --version
 
-      - name: 4. Install Dependencies
+      - name: 4. Install Dependencies (Cached)
         run: |
-          python -m pip install --upgrade pip
-          pip install torch --index-url https://download.pytorch.org/whl/cpu
-          pip install -r requirements.txt
+          uv sync --frozen
 
       - name: 5. Execute TechPulse Pipeline
         run: |
-          PYTHONPATH=src python -m techpulse
+          uv run techpulse
 
       - name: 6. Persist Content State (Git Auto-Commit)
         uses: stefanzweifel/git-auto-commit-action@v5

@@ -8,7 +8,7 @@ Powered by a 2-pass local `SentenceTransformer` vector search pipeline (`all-Min
 
 ## 🎯 The Problem: Hacker News Noise & Context Switching
 
-Engineering teams and tech leads waste **1 to 2 hours every day** manually scanning Hacker News, RSS feeds, and technical blogs. Out of ~500+ daily posts on Hacker News:
+Engineers waste **1 to 2 hours every day** manually scanning Hacker News, RSS feeds, and technical blogs. Out of ~500+ daily posts on Hacker News:
 
 - **~95% is noise** relative to your specific stack, spanning from speculative crypto updates and consumer gadget releases to off-topic policy debates.
 - **Keyword & RSS filters fail** because they lack semantic context (e.g., matching "Rust" the language versus "Rust" the game or corrosion).
